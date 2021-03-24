@@ -4,10 +4,10 @@
  Custom Objects with relations to other Custom Objects, would require modifying the code to handle your situation. An example is provided in the code similar to the manner Users have relations to Custom Objects.
  
  ## For Mac Users
- You can Run the .dmg packaged App.
+ You can Run the .dmg packaged App from the [Releases](https://github.com/ULSashido/ArrowDB_2_Sashido/releases).
  
  ## For Windows Users
- You can download the .air file and run it with AIR Runtime. Download here https://airsdk.harman.com/runtime prior to installing .air file.
+ You can download the [.air file](https://github.com/ULSashido/ArrowDB_2_Sashido/releases) and run it with AIR Runtime. Download here https://airsdk.harman.com/runtime prior to installing .air file.
  
  <img width="400" alt="Settings" src="https://user-images.githubusercontent.com/80773129/112351223-13d03400-8ca0-11eb-9563-71e1283cbef3.png">
  
