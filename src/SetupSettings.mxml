@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="500"
+			   title="Migration Settings" close="saveSettings()">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			
+			protected function saveSettings(event:MouseEvent = null):void {
+				if (acsKey.text.length > 0 && api_url.text.length > 0 && app_id.text.length > 0 && rest_api_key.text.length > 0 ) {
+					FlexGlobals.topLevelApplication.settings = {
+						acsKey: acsKey.text,
+						api_url: api_url.text,
+						app_id: app_id.text,
+						rest_api_key: rest_api_key.text
+					}
+					//trace("Settings: " + JSON.stringify(FlexGlobals.topLevelApplication.settings));
+					this.dispatchEvent(new Event('settings_saved'));
+				} else {
+					Alert.show("All fields are mandatory for the migration to occur", "Missing URL / Keys");
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:Form width="100%">
+		<s:FormHeading label="ArrowDB Settings"/>
+		<s:FormItem label="ArrowDB App Key">
+			<s:TextInput id="acsKey" prompt="ArrowDB App > Configuration > App Key" width="100%" />
+		</s:FormItem>
+		<s:FormHeading label="Sashido Settings" />
+		<s:FormItem label="Sashido API URL Address">
+			<s:TextInput id="api_url" prompt="Sahsido > App Settings > Security &amp; Keys > Paste API URL Address" width="100%"/>
+		</s:FormItem>
+		<s:FormItem label="Sashido Application ID">
+			<s:TextInput id="app_id" prompt="Sahsido > App Settings > Security &amp; Keys > Paste Application ID" width="100%" />
+		</s:FormItem>
+		<s:FormItem label="Sashido REST API Key">
+			<s:TextInput id="rest_api_key" prompt="Sahsido > App Settings > Security &amp; Keys > Paste REST API Key" width="100%" />
+		</s:FormItem>
+		<s:FormItem>
+			<s:Button label="Save" click="saveSettings(event)" />
+		</s:FormItem>
+	</s:Form>
+	
+</s:TitleWindow>

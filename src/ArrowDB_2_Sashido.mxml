@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   creationComplete="setup(event)" height="560" width="740">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.utils.DateUtil;
+			import com.cocoafish.sdk.Cocoafish;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.TitleWindow;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import ca.underlabs.Parse; // !!! Parse lib ca.underlabs.Parse.as !!!
+			
+			public var acsKey:String; // !!! ArrowDB API Key !!!
+			public var sdk:Cocoafish;
+			
+			[Bindable] private var initialMS:Number = 160; // Time Lapse between API calls
+			
+			private var limitHundred:Number = 100;
+			[Bindable] private var nextSkipHundred:Number = 100;
+			
+			private var limitThousand:Number = 1000;
+			[Bindable] private var nextSkipThousand:Number = 1000;
+			
+			//[Bindable] private var arrowAdminUser:Object;
+			[Bindable] public var settings:Object;
+			
+			[Bindable] private var users:Object = {};
+			[Bindable] private var numUsersMigrated:Number = 0;
+			
+			protected function setup(event:FlexEvent = null):void {
+				var settingsWindow:SetupSettings = new SetupSettings();
+				PopUpManager.addPopUp(settingsWindow, this, true);
+				PopUpManager.centerPopUp(settingsWindow);
+				
+				settingsWindow.addEventListener('settings_saved', function(event:Event):void {
+					PopUpManager.removePopUp(settingsWindow);
+					sdk = new Cocoafish(settings.acsKey); // initialed ArrowDB
+					//loginAsAdminToArrowDB();
+				});
+			}
+			
+			protected function changeTimeLapse(event:Event):void {
+				initialMS = timeLapseNS.value;
+				trace("initialMS is now set to: " + initialMS);
+			}
+			
+			protected function fetchAndMigrateUsers(event:MouseEvent, _nextSkip:Number):void {
+				var data:Object;
+				if (_nextSkip == 0) {
+					data = {limit:limitThousand, response_json_depth:2 }
+					nextSkipThousand = 1000; // reset from previous to 1000
+				} else {
+					data = {limit:limitThousand, response_json_depth:2, skip: _nextSkip } //, skip: 1000
+					nextSkipThousand += limitThousand; 
+				}
+				FlexGlobals.topLevelApplication.sdk.sendRequest("users/query.json", URLRequestMethod.GET, data, true, callbackArrowDBUsers);
+			}
+			
+			private function callbackArrowDBUsers(data:Object):void {
+				//trace("callbackArrowDBUser data: " + JSON.stringify(data));
+				if(data) {
+					if(data.hasOwnProperty("meta")) {
+						var meta:Object = data.meta;
+						//usersFeedback.text += "Total Users: " + meta.count;
+						//trace("callbackArrowDBUser meta: " + JSON.stringify(meta));
+						//trace("callbackArrowDBConsultant response: " + JSON.stringify(data.response.users[0]));
+						if(meta.status == "ok" && meta.code == 200) {
+							//trace("ArrowDB Users " + JSON.stringify(data.response.users[0]));
+							for (var i:int = 0; i < data.response.users.length; i++) {
+								setTimeout(setUserSendDelay, (initialMS * i), data.response.users[i]);
+							}
+						} else {
+							trace("Couldn't get ArrowDB Users: " + meta.message);
+						}
+					}
+				}
+			}
+			
+			private function setUserSendDelay(User:Object):void {
+				//trace("ACS User Obj: " + JSON.stringify(User));
+				
+				if (!User.hasOwnProperty('username')) {
+					// No Username in ArrowDB, we use email instead
+					User.userame = User.email;
+				}
+				
+				User['password'] = defaultPassword.text;
+				
+				if (User.hasOwnProperty('id')) {
+					User.arrowId = User.id;
+					delete User['id'];
+				}
+					
+				if (User.hasOwnProperty('created_at')) {
+					User.arrowCreatedAt = {"__type": "Date", "iso": ISOFormatter.format(DateUtil.parseW3CDTF(User.created_at)) };
+					delete User['created_at'];
+				}
+				if (User.hasOwnProperty('updated_at')) {
+					User.arrowUpdatedAt = {"__type": "Date", "iso": ISOFormatter.format(DateUtil.parseW3CDTF(User.updated_at)) };
+					delete User['updated_at'];
+				}
+				
+				if (User.hasOwnProperty('photo')) {
+					User['photoURL'] = User.photo.urls.original; // NOTE: These Photo URLs will be removed
+				}
+				
+				// Handle Confirmed Email Accounts
+				// Clients aren't allowed to manually update email verification.
+//				if (User.hasOwnProperty('confirmed_at')) {
+//					User['emailVerified'] = true;
+//					delete User['confirmed_at'];
+//				}
+				
+				// clean out ArrowDB predefined properties
+				if (User.hasOwnProperty('stats')) {
+					delete User['stats'];
+				}
+				if (User.hasOwnProperty('friend_counts')) {
+					delete User['friend_counts'];
+				}
+				
+				//trace("User Obj to send to Parse: " + JSON.stringify(User));
+				createParseAccount(User); 
+			}
+			
+			protected function createParseAccount(User:Object):void {
+				//trace("User to be sent " + JSON.stringify(User));
+				Parse.SignUp(User, 
+					function (resp:Object):void { // all good
+						if (resp.hasOwnProperty('code')) { // error occured
+							//trace("✖ ERROR: Account User Creation for " + User.first_name + ' ' + User.last_name + '\nDid not go through! => ' + JSON.stringify(resp));
+							console.text += "✖ ERROR: Account User Creation for " + User.first_name + ' ' + User.last_name + ' did not go through! => ' + JSON.stringify(resp) + '\n';
+						} else {
+							//trace("✔ Account Created: " + JSON.stringify(resp));
+							console.text += "✔ Account Created: " + JSON.stringify(resp) + '\n';
+							numUsersMigrated++;
+							usersMigrated.text = "Users Migrated: " + numUsersMigrated;
+							users[User.arrowId] = resp.objectId;
+						}
+					},
+					function (err:Object):void { // error
+						console.text += "✖ Network Error: " + JSON.stringify(err) + '\n';
+						trace(err);
+					}
+				);
+			}
+			
+			private function objectLength(myObject:Object):int {
+				var cnt:int=0;
+				for (var s:String in myObject) cnt++;
+				return cnt;
+			}
+			
+			protected function traceUsers(event:MouseEvent):void {
+				usersMigrated.text += "Num. of Users Migrated to Sashido: " + objectLength(users);
+			}
+			
+			protected function fetchAndMigrateCustomObj(event:MouseEvent, _nextSkip:Number):void {
+				var data:Object;
+				if (_nextSkip == 0) {
+					data = {limit:limitThousand, response_json_depth:2 }
+					nextSkipThousand = 1000;
+				} else {
+					data = {limit:limitThousand, response_json_depth:2, skip: _nextSkip } //, skip: 1000
+					nextSkipThousand += limitThousand; 
+				}
+				FlexGlobals.topLevelApplication.sdk.sendRequest("objects/" + customObjName.text + "/query.json", URLRequestMethod.GET, data, true, callbackArrowDBCustomObjs);
+			}
+			
+			private function callbackArrowDBCustomObjs(data:Object):void {
+				if(data) {
+					if(data.hasOwnProperty("meta")) {
+						var meta:Object = data.meta;
+						if(meta.status == "ok" && meta.code == 200) {
+							//console.text += "TOTAL " + customObjName.text + ": " + meta.count;
+							for (var i:int = 0; i < data.response[customObjName.text].length; i++) {
+								setTimeout(setCustomObjSendDelay, (initialMS * i), data.response[customObjName.text][i]);
+							}
+						} else {
+							trace("Couldn't get ArrowDB CustomObj: " + meta.message);
+						}
+					}
+				}
+			}
+			
+			private function setCustomObjSendDelay(CustomObj:Object):void {
+				
+				if (CustomObj.hasOwnProperty('user')) { 
+					CustomObj['creator'] = {"__op":"AddRelation", "objects":[{"__type":"Pointer","className":"_User","objectId": users[CustomObj.user.id]  }]}; // allUsers[Observation.user.id]
+					delete CustomObj['user'];
+				}
+				
+				CustomObj['arrowId'] = CustomObj.id;
+				delete CustomObj['id'];
+				
+				CustomObj['arrowCreatedAt'] = {"__type": "Date", "iso": ISOFormatter.format(DateUtil.parseW3CDTF(CustomObj.created_at)) };
+				delete CustomObj['created_at'];
+				
+				CustomObj['arrowUpdatedAt'] = {"__type": "Date", "iso": ISOFormatter.format(DateUtil.parseW3CDTF(CustomObj.updated_at)) };
+				delete CustomObj['updated_at'];
+				
+				// Remove relational fields in order to manually migrate. Note the Objects should be on Sashido prior in order to keep track of their Object Ids.
+				// Similar to how users ArrowDB id are being converted to the Sashido ObjectId
+				for (var key:String in CustomObj) {
+					if (key.indexOf('[ACS_') == 0) {
+						delete CustomObj[key]
+					} else if (key.indexOf('[CUSTOM_') == 0) {
+						delete CustomObj[key]
+					}
+				}
+				
+//				if (CustomObj.indexOf('[ACS_') == 0) {
+//					 has relational field -- must be manually modified in the code to handle relations
+//					 Example:
+//					 if (CustomObj.hasOwnProperty('[CUSTOM_field]field_id')) { 
+//						if( CustomObj['[CUSTOM_field]field_id'] is Array && CustomObj['[CUSTOM_field]field_id'][0].hasOwnProperty('id')) {
+//							CustomObj['field_id'] = {"__op":"AddRelation", "objects":[{"__type":"Pointer","className":"Classname","objectId": allFields[CustomObj['[CUSTOM_field]field_id'][0].id] }] } // allFields[Observation['[CUSTOM_field]field_id'][0].id]
+//						}
+//					delete CustomObj['[CUSTOM_field]field_id'];
+//				}
+				
+//				if (CustomObj.indexOf('[CUSTOM_') == 0) {
+//					// has relational field -- must be manually modified in the code to handle relations -- see example above
+//				}
+				
+				//trace("Custom Obj to send to Sashido: " + JSON.stringify(CustomObj));
+				createCustomObjOnParse(CustomObj);
+			}
+			
+			private function createCustomObjOnParse(CustomObj:Object):void {
+				Parse.Post(customObjName.text, CustomObj, 
+					function (resp:Object):void { // all good
+						if (resp.hasOwnProperty('code')) { // error occured
+							console.text += "✖ ERROR: " + customObjName.text + " for ArrowDB id: " + CustomObj.arrowId + ' ' + JSON.stringify(CustomObj) + ' did not go through! => ' +  JSON.stringify(resp) + '\n';
+						} else {
+							console.text += "✔ " + customObjName.text + " for ArrowDB id: " + CustomObj.arrowId + ' ' + JSON.stringify(resp) + '\n';
+						}
+					},
+					function (err:Object):void { // error
+						console.text += "✖ Network Error: " + JSON.stringify(err) + '\n';
+						//trace(err);
+					}
+				);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:DateTimeFormatter id="ISOFormatter" dateTimePattern="yyyy-MM-dd'T'HH:mm:ss'.'SSS'Z'" />
+	</fx:Declarations>
+	
+	<s:Image source="arrowToSashido.png" width="277" smooth="true" top="0" right="10"/>
+	
+	<s:VGroup width="100%" height="100%">
+		
+		<s:Form width="100%">
+			<s:FormHeading label="ArrowDB to Sashido Data Migration"/>
+			<s:FormItem label="Time Interval between API Calls">
+				<s:NumericStepper id="timeLapseNS" value="{initialMS}" minimum="80" maximum="1000" toolTip="Time Lapse Between each API Call" change="changeTimeLapse(event)"/>
+			</s:FormItem>
+			<s:FormItem label="Migrate Users" toolTip="Migrating Users first will allow for Relational Fields to be created for CustomObjects. ArrowDB automatically sets the User who created the CustomObjects.">
+				<s:layout>
+					<s:VerticalLayout />
+				</s:layout>
+				<s:TextInput id="defaultPassword" prompt="Enter Default Password for all Users" toolTip="ArrowDB does not export passwords, so a password should be set for all Accounts created on Sashido"/>
+				<s:Button id="btn1" label="1- Migrate First 1000 Users" click="fetchAndMigrateUsers(event, 0)" />
+				<s:Button id="btn2" label="2- Migrate Next 1000 Users" click="fetchAndMigrateUsers(event, nextSkipThousand)" toolTip="If you have more than 1000 Users, you can Click this again after Users have been migrated to migrate the next 1000 Users"/>
+				<s:Label id="usersMigrated" fontSize="10" width="100%"/>
+			</s:FormItem>
+			<mx:HRule width="100%"/>
+			<s:FormItem label="Migrate Custom Object">
+				<s:layout>
+					<s:VerticalLayout />
+				</s:layout>
+				<s:Label text="Make sure the CustomObject name is created in Sashido by the same classname" toolTip="In Sashido Server > Browse > Create a Class and give it the same name"/>
+				<s:TextInput id="customObjName" prompt="Enter exact name of the Custom Object" width="50%"/>
+				<s:Button id="btn3" label="1- Migrate First 1000 {customObjName.text == ''?'classname':customObjName.text}" click="fetchAndMigrateCustomObj(event, 0)" />
+				<s:Button id="btn4" label="2- Migrate Next 1000 {customObjName.text == ''?'classname':customObjName.text}" click="fetchAndMigrateCustomObj(event, nextSkipThousand)" toolTip="If you have more than 1000 rows of the CustomObject, you can Click this again after CustomObjects have been migrated to migrate the next 1000 CustomObject"/>
+			</s:FormItem>
+		</s:Form>
+		
+		<s:VGroup bottom="0" width="100%" height="32%">
+			<s:TextArea id="console" width="100%" height="100%" />
+			<s:Button label="Clear Console" click="{console.text = ''}" />
+		</s:VGroup>
+	</s:VGroup>
+	
+</s:WindowedApplication>
