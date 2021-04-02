@@ -196,7 +196,7 @@
 			private function setCustomObjSendDelay(CustomObj:Object):void {
 				
 				if (CustomObj.hasOwnProperty('user')) { 
-					CustomObj['creator'] = {"__op":"AddRelation", "objects":[{"__type":"Pointer","className":"_User","objectId": users[CustomObj.user.id]  }]}; // allUsers[Observation.user.id]
+					CustomObj['creator'] = { "__type":"Pointer","className":"_User","objectId": users[CustomObj.user.id] };
 					delete CustomObj['user'];
 				}
 				
@@ -218,7 +218,7 @@
 						delete CustomObj[key]
 					}
 				}
-				
+//				Example of Many to Many Relations
 //				if (CustomObj.indexOf('[ACS_') == 0) {
 //					 has relational field -- must be manually modified in the code to handle relations
 //					 Example:
