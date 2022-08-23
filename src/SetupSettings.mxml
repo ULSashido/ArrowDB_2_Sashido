@@ -37,17 +37,17 @@
 		<s:FormHeading label="Sashido Settings" />
 		<s:FormItem label="Sashido API URL Address">
 			<s:TextInput id="api_url" 
-						 text="https://pg-app-frswgf5yyrlbklbuisezecc2f7hzfv.scalabl.cloud/1/"
+						 text=""
 						 prompt="Sahsido > App Settings > Security &amp; Keys > Paste API URL Address" width="100%"/>
 		</s:FormItem>
 		<s:FormItem label="Sashido Application ID">
 			<s:TextInput id="app_id" 
-						 text="67YC1CNai2MGN2oXzSdnlSTu3dV9PhTRzcYGRQJU"
+						 text=""
 						 prompt="Sahsido > App Settings > Security &amp; Keys > Paste Application ID" width="100%" />
 		</s:FormItem>
 		<s:FormItem label="Sashido REST API Key">
 			<s:TextInput id="rest_api_key" 
-						 text="97g6zWvqTgkzcWhW5CPacaFUPlURRO93JcrTPdY7"
+						 text=""
 						 prompt="Sahsido > App Settings > Security &amp; Keys > Paste REST API Key" width="100%" />
 		</s:FormItem>
 		<s:FormItem>

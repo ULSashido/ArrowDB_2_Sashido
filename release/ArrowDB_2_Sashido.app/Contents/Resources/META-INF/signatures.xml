@@ -8,12 +8,12 @@
           <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
         </Transforms>
         <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
-        <DigestValue>OdBJDSZVDRcjRGUJ2L0aIKMHCeeG5I3L1z3dZ6BYxso=</DigestValue>
+        <DigestValue>t0TfEtGqrNrbuh3S+A0HTy+8C7L9SIZVOg2rMT0INAY=</DigestValue>
       </Reference>
     </SignedInfo>
-    <SignatureValue Id="PackageSignatureValue">F0eGR8gjHip8bal7VrTabfFCWNMNtG51kDweZrRJi318eAQsfT/QiEljUHQFL0HQ6bdMto/l7LQM
-fj5TPwxBK9Q1kB5TGJoWbgZrsj0DByWca8cP7w41CKk1FgsioNzc4bO9m/JsJ+77I9+aaz0dkjXW
-8a5VRjmgpswmQDzhrI0=</SignatureValue>
+    <SignatureValue Id="PackageSignatureValue">Dge+T4UN9Qbcxit3R6iuP1zeVO4ZY+lwMBLd9nMoOThGR+dBFcRg+Tv6sh+O/2GelsYqEu4zS80q
+QcKuanbwmbr1z/+jn6Fgc55/PrBflSpZcekCooxDnWOLZA6F+TOm937RJqM6ktKScrrMYYJl8n2R
+PzGf84Geq96JEu8ax5s=</SignatureValue>
     <KeyInfo>
       <X509Data>
         <X509Certificate>MIICZjCCAc6gAwIBAgIbLTFmN2RmZjY5OjE0N2YzYTAyMGMwOi04MDAwMA0GCSqGSIb3DQEBBQUA
@@ -31,7 +31,7 @@ BAwwCgYIKwYBBQUHAwMwDQYJKoZIhvcNAQEFBQADggCBAIHBTnEE2w8rvtj3fLUBg4O81MRmCk4c
     </KeyInfo>
     <Object>
       <Manifest Id="PackageContents">
-        <Reference URI="mimetype"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>0/oCb84THKMagtI0Dy0KogEu92TegdesqRr/clXct1c=</DigestValue></Reference><Reference URI="META-INF/AIR/application.xml"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>6tmsmHbZF9GmKNeoh1qP4P8w/OuTMhz7A/a3BmGnOxA=</DigestValue></Reference><Reference URI="ArrowDB_2_Sashido.swf"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>vN3enLohuVjuXfX2vEt42nND+3Vm/KPmfx3gtBwIwC8=</DigestValue></Reference><Reference URI="arrowToSashido.png"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>Z+KESnen05tqSETvab4f69Ae3pdw/ZBdy8zOloVsHnQ=</DigestValue></Reference>
+        <Reference URI="mimetype"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>0/oCb84THKMagtI0Dy0KogEu92TegdesqRr/clXct1c=</DigestValue></Reference><Reference URI="META-INF/AIR/application.xml"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>6tmsmHbZF9GmKNeoh1qP4P8w/OuTMhz7A/a3BmGnOxA=</DigestValue></Reference><Reference URI="ArrowDB_2_Sashido.swf"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>lBZc3NomuTSOW/ffHHMx8yakjgCd0yn7HPFnrDua9kM=</DigestValue></Reference><Reference URI="arrowToSashido.png"><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"></DigestMethod><DigestValue>Z+KESnen05tqSETvab4f69Ae3pdw/ZBdy8zOloVsHnQ=</DigestValue></Reference>
       </Manifest>
     </Object>
     
