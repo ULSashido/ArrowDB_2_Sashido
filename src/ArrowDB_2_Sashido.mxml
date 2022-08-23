@@ -17,11 +17,14 @@
 			import mx.core.FlexGlobals;
 			import mx.events.FlexEvent;
 			import mx.managers.PopUpManager;
+			import mx.utils.StringUtil;
 			
 			import ca.underlabs.Parse; // !!! Parse lib ca.underlabs.Parse.as !!!
 			
 			public var acsKey:String; // !!! ArrowDB API Key !!!
 			public var sdk:Cocoafish;
+			
+			[Bindable] private var arrowAdminUser:Object;
 			
 			[Bindable] private var initialMS:Number = 160; // Time Lapse between API calls
 			
@@ -45,8 +48,37 @@
 				settingsWindow.addEventListener('settings_saved', function(event:Event):void {
 					PopUpManager.removePopUp(settingsWindow);
 					sdk = new Cocoafish(settings.acsKey); // initialed ArrowDB
-					//loginAsAdminToArrowDB();
+					var data:Object = new Object();
+					data.login = 'default';
+					data.password = 'imemine';
+					data.response_json_depth = 2; // get relational DB of User (For Accountant in this Case)
+					sdk.sendRequest("users/login.json", URLRequestMethod.POST, data, true, arrowDbAdminLogin);
 				});
+				//loginAsAdminToArrowDB();
+			}
+			
+//			protected function loginAsAdminToArrowDB(event:Event = null):void {
+//				var data:Object = new Object();
+//				data.login = 'default';
+//				data.password = 'imemine';
+//				data.response_json_depth = 2; // get relational DB of User (For Accountant in this Case)
+//				sdk.sendRequest("users/login.json", URLRequestMethod.POST, data, true, arrowDbAdminLogin);
+//			}
+			
+			private function arrowDbAdminLogin(data:Object):void {
+				if(data) {
+					if(data.hasOwnProperty("meta")) {
+						var meta:Object = data.meta;
+						if(meta.status == "ok" && meta.code == 200 && meta.method_name == "loginUser") {
+							//trace("User Login " + JSON.stringify(data.response.users[0]));
+							arrowAdminUser = data.response.users[0];
+							arrowAdminUser.session_id = data.meta.session_id;
+							trace("Logged in as Admin to ArrowDB as " + data.response.users[0].username);
+						} else {
+							trace("Admin login to ArrowDB error " + meta.message);
+						}
+					}
+				}
 			}
 			
 			protected function changeTimeLapse(event:Event):void {
@@ -89,10 +121,11 @@
 			private function setUserSendDelay(User:Object):void {
 				//trace("ACS User Obj: " + JSON.stringify(User));
 				
-				if (!User.hasOwnProperty('username')) {
-					// No Username in ArrowDB, we use email instead
-					User.userame = User.email;
-				}
+//				if (!User.hasOwnProperty('username')) {
+//					// No Username in ArrowDB, we use email instead
+//					User.username = User.email;
+//				}
+				User['username'] = User.email;
 				
 				User['password'] = defaultPassword.text;
 				
@@ -114,12 +147,13 @@
 					User['photoURL'] = User.photo.urls.original; // NOTE: These Photo URLs will be removed
 				}
 				
-				// Handle Confirmed Email Accounts
-				// Clients aren't allowed to manually update email verification.
-//				if (User.hasOwnProperty('confirmed_at')) {
-//					User['emailVerified'] = true;
-//					delete User['confirmed_at'];
-//				}
+				// Flatten custom_fields
+				if (User.hasOwnProperty('custom_fields')) {
+					for (var prop:String in User.custom_fields) {
+						User[prop] = User.custom_fields[prop];
+					}
+					delete User['custom_fields'];
+				}
 				
 				// clean out ArrowDB predefined properties
 				if (User.hasOwnProperty('stats')) {
@@ -127,6 +161,9 @@
 				}
 				if (User.hasOwnProperty('friend_counts')) {
 					delete User['friend_counts'];
+				}
+				if (User.hasOwnProperty('external_accounts')) {
+					delete User['external_accounts'];
 				}
 				
 				//trace("User Obj to send to Parse: " + JSON.stringify(User));
@@ -211,12 +248,18 @@
 				
 				// Remove relational fields in order to manually migrate. Note the Objects should be on Sashido prior in order to keep track of their Object Ids.
 				// Similar to how users ArrowDB id are being converted to the Sashido ObjectId
+				const rex:RegExp = /[\s\r\n]+/gim;
 				for (var key:String in CustomObj) {
 					if (key.indexOf('[ACS_') == 0) {
 						delete CustomObj[key]
 					} else if (key.indexOf('[CUSTOM_') == 0) {
 						delete CustomObj[key]
 					}
+					
+					// remove spaces from key names & readd it's values to keys without spaces
+					var _key:String = key.replace(rex,"");
+					CustomObj[_key] = CustomObj[key];
+					delete CustomObj[key];
 				}
 //				Example of Many to Many Relations
 //				if (CustomObj.indexOf('[ACS_') == 0) {
