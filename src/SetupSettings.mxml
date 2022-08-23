@@ -31,7 +31,7 @@
 		<s:FormHeading label="ArrowDB Settings"/>
 		<s:FormItem label="ArrowDB App Key">
 			<s:TextInput id="acsKey" 
-						 text="7GKdSaiQJeCnv9nKBj4Sjafz2iEFHXJS"
+						 text=""
 						 prompt="ArrowDB App > Configuration > App Key" width="100%" />
 		</s:FormItem>
 		<s:FormHeading label="Sashido Settings" />
